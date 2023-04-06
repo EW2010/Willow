@@ -1,0 +1,5 @@
+FileVersion = 1
+Projects = {BindingGeneratorHpp = {Path = "."}, Xml-Beef = "*"}
+
+[Workspace]
+StartupProject = "BindingGeneratorHpp"

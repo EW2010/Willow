@@ -1,0 +1,18 @@
+FileVersion = 1
+Dependencies = {corlib = "*", Xml-Beef = "*"}
+
+[Project]
+Name = "BindingGeneratorHpp"
+StartupObject = "BindingGeneratorHpp.Program"
+
+[Configs.Debug.Win64]
+LibPaths = ["$(ProjectDir)/libclang.dll"]
+
+[Configs.Release.Win64]
+LibPaths = ["$(ProjectDir)/libclang.dll"]
+
+[Configs.Paranoid.Win64]
+LibPaths = ["$(ProjectDir)/libclang.dll"]
+
+[Configs.Test.Win64]
+LibPaths = ["$(ProjectDir)/libclang.dll"]
