@@ -22,6 +22,7 @@ using System.Interop;
     </template>
     <template id="Library">
 using {name};
+using internal {name};
 namespace {name}
 {
 
@@ -127,6 +128,23 @@ static class {name}
     public typealias {name} = {type};
         <argument name="name"/>
         <argument name="type"/>
+        <argument name="documentation">
+            <prefixln>/// </prefixln>
+        </argument>
+    </template>
+    <template id="Constructor">
+        /// {documentation}
+        [LinkName(.CPP), CallingConvention(.{calling_conv})]
+        public extern
+#if {destructor}
+        ~this
+#else
+        this
+#endif
+        ({parameters});
+        <argument name="calling_conv"/>
+        <argument name="destuctor"/>
+        <argument name="parameters"/>
         <argument name="documentation">
             <prefixln>/// </prefixln>
         </argument>

@@ -1,3 +1,5 @@
+# since comptime is currently broken in beef (#1822) this is an alternative soulution
+
 from xml.etree import ElementTree
 
 templates = ElementTree.ElementTree(file="./templates.xml")
