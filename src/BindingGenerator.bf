@@ -18,7 +18,7 @@ class BindingGenerator : Compiler.Generator
 		AddCombo("naming", "Naming Convention", "Pascal Case", StringView[?]("1:1", "Pascal Case", "Pascal but Fields Camel"));
 	}
 
-	typealias Data = (char8* outText, StringView naming);
+	typealias Data = (String outText, StringView naming, List<StringView> nest);
 	private static Clang.CXChildVisitResult HandleCursor(Clang.CXCursor cursor, Clang.CXCursor parent, Clang.CXClientData rawData)
 	{
 		(StringView output, bool @const) GetBeefType(Clang.CXType type)
@@ -60,9 +60,13 @@ class BindingGenerator : Compiler.Generator
 				return ("c_ulonglong", @const);
 
 			case .CXType_Pointer:
-				return (scope $"{GetBeefType(Clang.GetPointeeType(type)).output}*", @const);
+				return (scope $"({GetBeefType(Clang.GetPointeeType(type)).output}*)", @const);
+			case .CXType_RValueReference, .CXType_LValueReference:
+				return (scope $"(ref {GetBeefType(Clang.GetPointeeType(type)).output})", @const);
+
 			case .CXType_Elaborated: // struct enum class
-				
+				return (scope $"type_{Clang.GetCString(Clang.GetTypeSpelling(type)).GetHashCode()}", @const);
+			default:
 			}
 		}
 
@@ -88,19 +92,36 @@ class BindingGenerator : Compiler.Generator
 				else return ConvertName("Pascal Case", thing);
 			}
 		}
+
+		void CreateInternalAlias(String str, List<StringView> nest, int hashed, StringView aliased)
+		{
+			for (let n in nest)
+			{
+				str.Append("}");
+			}
+
+			str.AppendF($"\ninternal typealias type_{hashed} = {aliased};\n");
+
+			for (let n in nest)
+			{
+				str.AppendF($$"extention {{n}} {\n");
+			}
+		}
 		
 		Data* data = (.)rawData;
-		String outText = new .(data.outText);
 
 		switch (Clang.GetCursorKind(cursor))
 		{
 		case .CXCursor_Namespace:
+			HandleCursor(cursor, parent, rawData);
 		case .CXCursor_StructDecl, .CXCursor_ClassDecl:
-		case .CXCursor_FunctionDecl:
+		case .CXCursor_FunctionDecl, .CXCursor_CXXMethod:
+
+		case .CXCursor_Constructor, .CXCursor_Destructor:
 		case .CXCursor_TypeAliasDecl, .CXCursor_TypedefDecl:
 			Clang.CXType type = Clang.GetTypedefDeclUnderlyingType(cursor);
 			Templates.TypeAlias.Inject(
-				outText,
+				data.outText,
 				scope Dictionary<StringView, StringView>()
 					..Add("name", ConvertName(data.naming, .(Clang.GetCString(Clang.GetCursorSpelling(cursor)))))
 					..Add("type", GetBeefType(type).output)
@@ -108,16 +129,17 @@ class BindingGenerator : Compiler.Generator
 			);
 		case .CXCursor_TranslationUnit:
 			String body = scope .();
+			StringView name = ConvertName(data.naming, .(Clang.GetCString(Clang.GetCursorSpelling(cursor))));
 			Clang.VisitChildren(
 				cursor,
 				=> HandleCursor,
-				&(body, data.naming)
+				&(body, data.naming, data.nest..Add(name))
 			);
 
 			Templates.Library.Inject(
-				outText,
+				data.outText,
 				scope Dictionary<StringView, StringView>()
-					..Add("name", "")
+					..Add("name", name)
 					..Add("body", body)
 					..Add("documentation", "")
 			);
@@ -151,7 +173,7 @@ class BindingGenerator : Compiler.Generator
 
 		Clang.CXCursor cursor = Clang.GetTranslationUnitCursor(unit);
 
-		HandleCursor(cursor, cursor, &(outText, mParams["naming"]));
+		HandleCursor(cursor, cursor, &(outText, mParams["naming"], scope List<StringView>()));
 
 		Clang.DisposeIndex(index);
 		Clang.DisposeTranslationUnit(unit);

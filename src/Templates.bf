@@ -25,6 +25,7 @@ using System.Interop;
 """
 
 using {name};
+using internal {name};
 namespace {name}
 {
 
@@ -135,5 +136,23 @@ static class {name}
 """,
                 id: "TypeAlias",
                 arguments: Template.Argument[?](  (StringView("name"), Template.Function[?]()), (StringView("type"), Template.Function[?]()), (StringView("documentation"), Template.Function[?](  ("prefixln", "/// "))))
+        );
+	public static let Constructor = new Template(
+                text: 
+"""
+
+        /// {documentation}
+        [LinkName(.CPP), CallingConvention(.{calling_conv})]
+        public extern
+#if {destructor}
+        ~this
+#else
+        this
+#endif
+        ({parameters});
+        
+""",
+                id: "Constructor",
+                arguments: Template.Argument[?](  (StringView("calling_conv"), Template.Function[?]()), (StringView("destuctor"), Template.Function[?]()), (StringView("parameters"), Template.Function[?]()), (StringView("documentation"), Template.Function[?](  ("prefixln", "/// "))))
         );
 }
