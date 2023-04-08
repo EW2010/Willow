@@ -1,5 +1,4 @@
 FileVersion = 1
-Dependencies = {corlib = "*", Xml-Beef = "*"}
 
 [Project]
 Name = "BindingGeneratorHpp"

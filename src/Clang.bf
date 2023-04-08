@@ -139,6 +139,18 @@ static class Clang
 	[CLink, LinkName("clang_isConstQualifiedType")]
 	public static extern c_uint IsConstQualifiedType(CXType type);
 
+
+	// function
+	[CLink, LinkName("clang_getCursorResultType")]
+	public static extern CXType GetCursorResultType(CXCursor cursor); 
+
+	[CLink, LinkName("clang_getCursorCallingConv")]
+	public static extern CXCallingConv GetCursorCallingConv(CXCursor cursor);
+
+	[CLink, LinkName("clang_getCursorResultType")]
+	public static extern CXType GetCursorResultType(CXCursor cursor);
+
+	//////////////////////////////
 	[CRepr]
 	public enum CXTypeKind {
 	  /**
@@ -294,7 +306,7 @@ static class Clang
 	 * Describes the calling convention of a function type
 	 */
 	[CRepr, AllowDuplicates]
-	enum CXCallingConv {
+	public enum CXCallingConv {
 	  CXCallingConv_Default = 0,
 	  CXCallingConv_C = 1,
 	  CXCallingConv_X86StdCall = 2,

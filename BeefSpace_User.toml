@@ -44,11 +44,12 @@ Type = "TabbedView"
 
 [[MainDockingFrame.DockedWidgets.DockedWidgets.Tabs]]
 TabLabel = "Clang.bf"
-TabWidth = 88.0
+TabWidth = 78.0
 TabIsPinned = false
 Type = "SourceViewPanel"
 FilePath = "src\\Clang.bf"
-CursorPos = 158
+CursorPos = 3962
+VertPos = 1566.0
 ProjectName = "BindingGeneratorHpp"
 
 [[MainDockingFrame.DockedWidgets.DockedWidgets.Tabs]]
@@ -58,8 +59,8 @@ TabWidth = 146.0
 TabIsPinned = false
 Type = "SourceViewPanel"
 FilePath = "src\\BindingGenerator.bf"
-CursorPos = 1083
-VertPos = 255.0
+CursorPos = 83
+VertPos = 15.0
 ProjectName = "BindingGeneratorHpp"
 
 [[MainDockingFrame.DockedWidgets]]

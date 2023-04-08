@@ -3,7 +3,6 @@ using System.Collections;
 using System.IO;
 using System.Diagnostics;
 
-using Xml_Beef;
 using LibClang;
 
 namespace BindingGeneratorHpp;
@@ -21,6 +20,13 @@ class BindingGenerator : Compiler.Generator
 	typealias Data = (String outText, StringView naming, List<StringView> nest);
 	private static Clang.CXChildVisitResult HandleCursor(Clang.CXCursor cursor, Clang.CXCursor parent, Clang.CXClientData rawData)
 	{
+		StringView CXString2StringView(Clang.CXString str)
+		{
+			StringView output = .(Clang.GetCString(str));
+			Clang.DisposeString(str);
+			return output;
+		}
+
 		(StringView output, bool @const) GetBeefType(Clang.CXType type)
 		{
 			bool @const = Clang.IsConstQualifiedType(type) > 0;
@@ -65,7 +71,7 @@ class BindingGenerator : Compiler.Generator
 				return (scope $"(ref {GetBeefType(Clang.GetPointeeType(type)).output})", @const);
 
 			case .CXType_Elaborated: // struct enum class
-				return (scope $"type_{Clang.GetCString(Clang.GetTypeSpelling(type)).GetHashCode()}", @const);
+				return (scope $"type_{CXString2StringView(Clang.GetTypeSpelling(type)).GetHashCode()}", @const);
 			default:
 			}
 		}
@@ -113,7 +119,11 @@ class BindingGenerator : Compiler.Generator
 		switch (Clang.GetCursorKind(cursor))
 		{
 		case .CXCursor_Namespace:
-			HandleCursor(cursor, parent, rawData);
+			Clang.VisitChildren(
+				cursor,
+				=> HandleCursor,
+				rawData
+			);
 		case .CXCursor_StructDecl, .CXCursor_ClassDecl:
 		case .CXCursor_FunctionDecl, .CXCursor_CXXMethod:
 
@@ -123,13 +133,13 @@ class BindingGenerator : Compiler.Generator
 			Templates.TypeAlias.Inject(
 				data.outText,
 				scope Dictionary<StringView, StringView>()
-					..Add("name", ConvertName(data.naming, .(Clang.GetCString(Clang.GetCursorSpelling(cursor)))))
+					..Add("name", ConvertName(data.naming, CXString2StringView(Clang.GetCursorSpelling(cursor))))
 					..Add("type", GetBeefType(type).output)
 					..Add("documentation", .(Clang.GetCString(Clang.Cursor_GetRawCommentText(cursor))))
 			);
 		case .CXCursor_TranslationUnit:
 			String body = scope .();
-			StringView name = ConvertName(data.naming, .(Clang.GetCString(Clang.GetCursorSpelling(cursor))));
+			StringView name = ConvertName(data.naming, CXString2StringView(Clang.GetCursorSpelling(cursor)));
 			Clang.VisitChildren(
 				cursor,
 				=> HandleCursor,
