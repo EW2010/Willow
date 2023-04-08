@@ -9,7 +9,7 @@ namespace BindingGeneratorHpp;
 
 class BindingGenerator : Compiler.Generator
 {
-	public override String Name => "Binding of a Header (Willow)";
+	public override String Name => "Binding (Willow)";
 
 	public override void InitUI()
 	{
@@ -18,7 +18,7 @@ class BindingGenerator : Compiler.Generator
 	}
 
 	typealias Data = (String outText, StringView naming, List<StringView> nest);
-	private static Clang.CXChildVisitResult HandleCursor(Clang.CXCursor cursor, Clang.CXCursor parent, Clang.CXClientData rawData)
+	public static Clang.CXChildVisitResult HandleCursor(Clang.CXCursor cursor, Clang.CXCursor parent, Clang.CXClientData rawData)
 	{
 		StringView CXString2StringView(Clang.CXString str)
 		{
@@ -27,51 +27,51 @@ class BindingGenerator : Compiler.Generator
 			return output;
 		}
 
-		(StringView output, bool @const) GetBeefType(Clang.CXType type)
+		(StringView output, StringView constant) GetBeefType(Clang.CXType type)
 		{
-			bool @const = Clang.IsConstQualifiedType(type) > 0;
+			let constant = Clang.IsConstQualifiedType(type) > 0 ? "true" : "false";
 			switch (type.kind)
 			{
 			case .CXType_Char_S:
-				return ("c_char", @const);
+				return ("c_char", constant);
 			case .CXType_Char16:
-				return ("char16", @const);
+				return ("char16", constant);
 			case .CXType_Char32:
-				return ("char32", @const);
+				return ("char32", constant);
 			case .CXType_WChar:
-				return ("c_wchar", @const);
+				return ("c_wchar", constant);
 			case .CXType_Short:
-				return ("c_short", @const);
+				return ("c_short", constant);
 			case .CXType_Int:
-				return ("c_int", @const);
+				return ("c_int", constant);
 			case .CXType_Long:
-				return ("c_long", @const);
+				return ("c_long", constant);
 			case .CXType_LongLong:
-				return ("c_longlong", @const);
+				return ("c_longlong", constant);
 			case .CXType_Float:
-				return ("float", @const);
+				return ("float", constant);
 			case .CXType_Double:
-				return ("double", @const);
+				return ("double", constant);
 			case .CXType_LongDouble:
-				return ("c_longdouble", @const);
+				return ("c_longdouble", constant);
 			case .CXType_Char_U:
-				return ("c_uchar", @const);
+				return ("c_uchar", constant);
 			case .CXType_UShort:
-				return ("c_ushort", @const);
+				return ("c_ushort", constant);
 			case .CXType_UInt:
-				return ("c_uint", @const);
+				return ("c_uint", constant);
 			case .CXType_ULong:
-				return ("c_ulong", @const);
+				return ("c_ulong", constant);
 			case .CXType_ULongLong:
-				return ("c_ulonglong", @const);
+				return ("c_ulonglong", constant);
 
 			case .CXType_Pointer:
-				return (scope $"({GetBeefType(Clang.GetPointeeType(type)).output}*)", @const);
+				return (scope $"({GetBeefType(Clang.GetPointeeType(type)).output}*)", constant);
 			case .CXType_RValueReference, .CXType_LValueReference:
-				return (scope $"(ref {GetBeefType(Clang.GetPointeeType(type)).output})", @const);
+				return (scope $"(ref {GetBeefType(Clang.GetPointeeType(type)).output})", constant);
 
 			case .CXType_Elaborated: // struct enum class
-				return (scope $"type_{CXString2StringView(Clang.GetTypeSpelling(type)).GetHashCode()}", @const);
+				return (scope $"type_{CXString2StringView(Clang.GetTypeSpelling(type)).GetHashCode()}", constant);
 			default:
 			}
 		}
@@ -126,8 +126,101 @@ class BindingGenerator : Compiler.Generator
 			);
 		case .CXCursor_StructDecl, .CXCursor_ClassDecl:
 		case .CXCursor_FunctionDecl, .CXCursor_CXXMethod:
+			StringView callingConv;
+			switch (Clang.GetCursorCallingConv(cursor))
+			{
+			case .CXCallingConv_C:
+				callingConv = "Cdecl";
+			case .CXCallingConv_X86StdCall:
+				callingConv = "StdCall";
+			case .CXCallingConv_X86FastCall:
+				callingConv = "FastCall";
+			default:
+				callingConv = "Unspecified";
+			}
 
+			let name = CXString2StringView(Clang.GetCursorSpelling(cursor));
+			let type = GetBeefType(Clang.GetCursorType(cursor));
+			let docs = CXString2StringView(Clang.Cursor_GetRawCommentText(cursor));
+
+			String parameters = scope .();
+			let num = Clang.Cursor_GetNumArguments(cursor);
+ 			for (let i < num)
+			{
+				let param = Clang.Cursor_GetArgument(cursor, (.)i);
+				let p_type = GetBeefType(Clang.GetCursorType(param));
+				let p_name = ConvertName(data.naming, CXString2StringView(Clang.GetCursorSpelling(param)));
+
+				Templates.Parameter.Inject(
+					parameters,
+					scope Dictionary<StringView, StringView>()
+						..Add("name", p_name)
+						..Add("type", p_type.output)
+						..Add("const", p_type.constant)
+						..Add("params", Clang.GetCursorKind(param) == .CXCursor_VarDecl ? "true" : "false")
+						..Add("last", i == num - 1 ? "true" : "false")
+				);
+			}
+
+			Templates.Function.Inject(
+				data.outText,
+				scope Dictionary<StringView, StringView>()
+					..Add("mangle_name", name)
+					..Add("c_mangling", Clang.GetCursorLinkage(cursor) == .CXLinkage_UniqueExternal ? "false" : "true")
+
+					..Add("return", type.output)
+					..Add("return_const", type.constant)
+
+					..Add("name", ConvertName(data.naming, name))
+					..Add("parameters", parameters)
+					..Add("calling_conv", callingConv)
+
+					..Add("documentation", docs)
+			);
 		case .CXCursor_Constructor, .CXCursor_Destructor:
+			StringView callingConv;
+			switch (Clang.GetCursorCallingConv(cursor))
+			{
+			case .CXCallingConv_C:
+				callingConv = "Cdecl";
+			case .CXCallingConv_X86StdCall:
+				callingConv = "StdCall";
+			case .CXCallingConv_X86FastCall:
+				callingConv = "FastCall";
+			default:
+				callingConv = "Unspecified";
+			}
+
+			let docs = CXString2StringView(Clang.Cursor_GetRawCommentText(cursor));
+
+			String parameters = scope .();
+			let num = Clang.Cursor_GetNumArguments(cursor);
+			for (let i < num)
+			{
+				let param = Clang.Cursor_GetArgument(cursor, (.)i);
+				let p_type = GetBeefType(Clang.GetCursorType(param));
+				let p_name = ConvertName(data.naming, CXString2StringView(Clang.GetCursorSpelling(param)));
+
+				Templates.Parameter.Inject(
+					parameters,
+					scope Dictionary<StringView, StringView>()
+						..Add("name", p_name)
+						..Add("type", p_type.output)
+						..Add("const", p_type.constant)
+						..Add("params", Clang.GetCursorKind(param) == .CXCursor_VarDecl ? "true" : "false")
+						..Add("last", i == num - 1 ? "true" : "false")
+				);
+			}
+
+			Templates.Constructor.Inject(
+				data.outText,
+				scope Dictionary<StringView, StringView>()
+					..Add("destructor", Clang.GetCursorKind(cursor) == .CXCursor_Destructor ? "true" : "false")
+					..Add("c_mangling", Clang.GetCursorLinkage(cursor) == .CXLinkage_UniqueExternal ? "false" : "true")
+					..Add("parameters", parameters)
+					..Add("calling_conv", callingConv)
+					..Add("documentation", docs)
+			);
 		case .CXCursor_TypeAliasDecl, .CXCursor_TypedefDecl:
 			Clang.CXType type = Clang.GetTypedefDeclUnderlyingType(cursor);
 			Templates.TypeAlias.Inject(
@@ -153,6 +246,7 @@ class BindingGenerator : Compiler.Generator
 					..Add("body", body)
 					..Add("documentation", "")
 			);
+		case .CXCursor_InclusionDirective:
 		default:
 		}
 
@@ -160,6 +254,13 @@ class BindingGenerator : Compiler.Generator
 	}
 
 	public override void Generate(String outFileName, String outText, ref Flags generateFlags)
+	{
+		outFileName.Append(mParams["header"]);
+		generateFlags = .AllowRegenerate;
+		ParseAndGen(outText, mParams["header"]);
+	}
+
+	public void ParseAndGen(String outText, StringView filename)
 	{
 		Templates.BoilerPlate.Inject(
 			outText,
@@ -169,7 +270,7 @@ class BindingGenerator : Compiler.Generator
 		Clang.CXIndex index = Clang.CreateIndex();
 		Clang.CXTranslationUnit unit = Clang.ParseTranslationUnit(
 			index,
-			mParams["header"].ToScopeCStr!(),
+			filename.ToScopeCStr!(),
 			null, 0,
 			null, 0,
 			.SkipFunctionBodies | .IncludeBriefCommentsInCodeCompletion

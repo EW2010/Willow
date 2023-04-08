@@ -1,11 +1,11 @@
 FileVersion = 1
 LastConfig = "Debug"
 LastPlatform = "Win64"
-RecentFilesList = ["src\\BindingGenerator.bf", "src\\Clang.bf"]
+RecentFilesList = ["src\\Willow.bf", "src\\Clang.bf", "src\\BindingGenerator.bf"]
 
 [MainWindow]
-X = 0
-Y = 0
+X = -8
+Y = -8
 Width = 1936
 Height = 1056
 ShowKind = "ShowMaximized"
@@ -43,25 +43,34 @@ DefaultDocumentsTabbedView = true
 Type = "TabbedView"
 
 [[MainDockingFrame.DockedWidgets.DockedWidgets.Tabs]]
+Active = true
+TabLabel = "Willow.bf"
+TabWidth = 93.0
+TabIsPinned = false
+Type = "SourceViewPanel"
+FilePath = "src\\Willow.bf"
+CursorPos = 297
+ProjectName = "Willow"
+
+[[MainDockingFrame.DockedWidgets.DockedWidgets.Tabs]]
 TabLabel = "Clang.bf"
 TabWidth = 78.0
 TabIsPinned = false
 Type = "SourceViewPanel"
 FilePath = "src\\Clang.bf"
-CursorPos = 3962
-VertPos = 1566.0
-ProjectName = "BindingGeneratorHpp"
+CursorPos = 4326
+VertPos = 2106.0
+ProjectName = "Willow"
 
 [[MainDockingFrame.DockedWidgets.DockedWidgets.Tabs]]
-Active = true
 TabLabel = "BindingGenerator.bf"
 TabWidth = 146.0
 TabIsPinned = false
 Type = "SourceViewPanel"
 FilePath = "src\\BindingGenerator.bf"
-CursorPos = 83
-VertPos = 15.0
-ProjectName = "BindingGeneratorHpp"
+CursorPos = 6111
+VertPos = 2614.333
+ProjectName = "Willow"
 
 [[MainDockingFrame.DockedWidgets]]
 RequestedWidth = 250.0

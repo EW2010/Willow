@@ -147,10 +147,44 @@ static class Clang
 	[CLink, LinkName("clang_getCursorCallingConv")]
 	public static extern CXCallingConv GetCursorCallingConv(CXCursor cursor);
 
-	[CLink, LinkName("clang_getCursorResultType")]
-	public static extern CXType GetCursorResultType(CXCursor cursor);
+	[CLink, LinkName("clang_Cursor_getNumArguments")]
+	public static extern c_int Cursor_GetNumArguments(CXCursor cursor);
+
+	[CLink, LinkName("clang_Cursor_getArgument")]
+	public static extern CXCursor Cursor_GetArgument(CXCursor cursor, c_uint i);
+
+	[CLink, LinkName("clang_getCursorLinkage")]
+	public static extern CXLinkageKind GetCursorLinkage(CXCursor cursor);
+
+	// file
+	public typealias CXFile = void*;
+
+	[CLink, LinkName("clang_getIncludedFile")]
+	public static extern CXFile GetIncludedFile(CXCursor cursor);
+
+	[CLink, LinkName("clang_getFileName")]
+	public static extern CXString GetFileName(CXFile file);
 
 	//////////////////////////////
+	[CRepr]
+	public enum CXLinkageKind {
+	  /** This value indicates that no linkage information is available
+	   * for a provided CXCursor. */
+	  CXLinkage_Invalid,
+	  /**
+	   * This is the linkage for variables, parameters, and so on that
+	   *  have automatic storage.  This covers normal (non-extern) local variables.
+	   */
+	  CXLinkage_NoLinkage,
+	  /** This is the linkage for static variables and static functions. */
+	  CXLinkage_Internal,
+	  /** This is the linkage for entities with external linkage that live
+	   * in C++ anonymous namespaces.*/
+	  CXLinkage_UniqueExternal,
+	  /** This is the linkage for entities with true, external linkage. */
+	  CXLinkage_External
+	};
+
 	[CRepr]
 	public enum CXTypeKind {
 	  /**

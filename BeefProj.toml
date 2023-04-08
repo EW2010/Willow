@@ -1,8 +1,9 @@
 FileVersion = 1
 
 [Project]
-Name = "BindingGeneratorHpp"
+Name = "Willow"
 StartupObject = "BindingGeneratorHpp.Program"
+DefaultNamespace = "BindingGeneratorHpp"
 
 [Configs.Debug.Win64]
 LibPaths = ["$(ProjectDir)/libclang.dll"]
